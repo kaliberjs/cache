@@ -1,1 +1,1 @@
-export { hello } from './src/hello'
+export * as cache from './src/cache'
