@@ -1,8 +1,10 @@
-import { createCache } from '../src/cache'
+import { createCache } from '../src/cache.js'
 
 const unsafeCache = createCache({ allowReturnExpiredValue: true, expirationTime: 1000 })
 
 async function main() {
+  test('0')
+
   await Promise.all([
     test('1'),
     test('2'),

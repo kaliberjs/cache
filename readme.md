@@ -26,12 +26,13 @@ yarn add @kaliber/cache
 Short example. If your library has multiple ways to use it, show the most used one and refer to `/example` for further examples.
 
 ```jsx
+import fetch from 'node-fetch'
 import { createCache } from '@kaliber/cache'
 
-const safeCache = createCache({ allowReturnExpiredValue: false, expirationTime: 1000 })
+const cache = createCache({ allowReturnExpiredValue: false, expirationTime: 1000 })
 
 function handleRequest(postId) {
-  const data = safeCache(async () => {
+  const data = cache(async () => {
     const response = await fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`)
     return await response.json()
   }, {
