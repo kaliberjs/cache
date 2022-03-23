@@ -1,16 +1,4 @@
-# BEFORE YOU PUBLISH
-- Make sure your example works.
-- Remove 'BEFORE YOU PUBLISH' and 'PUBLISHING' from this document.
-
-# PUBLISHING
-- Make sure you are added to the kaliber organization on NPM
-- run `yarn publish`
-- Enter a correct version, we adhere to semantic versioning (semver)
-- run `git push`
-- run `git push --tags`
-- Send everybody an email to introduce them to your library!
-
-# Library title
+# Cache
 Simple memory cache function.
 
 ## Motivation
