@@ -1,1 +1,1 @@
-export { hello } from './src/hello'
+export * from './src/cache.js'

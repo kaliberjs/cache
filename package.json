@@ -1,13 +1,14 @@
 {
-  "name": "@kaliber/library",
-  "version": "1.0.0",
+  "name": "@kaliber/cache",
+  "version": "0.0.1",
   "main": "index.js",
   "sideEffects": false,
   "publishConfig": {
     "access": "public"
   },
   "keywords": [
-    "hello"
+    "cache",
+    "memory-cache"
   ],
   "files": [
     "index.js",
@@ -18,6 +19,6 @@
   ],
   "private": false,
   "license": "MIT",
-  "description": "A short description",
-  "repository": "https://github.com/kaliberjs/library.git"
+  "description": "Simple memory cache",
+  "repository": "https://github.com/kaliberjs/cache.git"
 }
