@@ -4,7 +4,8 @@
   "main": "index.js",
   "sideEffects": false,
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
   "publishConfig": {
     "access": "public"
@@ -25,6 +26,7 @@
   "description": "Simple memory cache",
   "repository": "https://github.com/kaliberjs/cache.git",
   "devDependencies": {
-    "jest": "^27.5.1"
+    "jest": "^27.5.1",
+    "jest-esm-transformer": "^1.0.0"
   }
 }
