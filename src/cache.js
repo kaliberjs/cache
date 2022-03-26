@@ -1,12 +1,12 @@
 /**
- * @param {import('../types/types').CacheParams} params
+ * @param {import('./types').CacheParams} params
  */
 export function createCache({ allowReturnExpiredValue, expirationTime }) {
   const cache = {}
 
   /**
    * @template T
-   * @type {import('../types/types').Cache<T>}
+   * @type {import('./types').Cache<T>}
    */
   return function getCachedValue(getValue, { cacheKey }) {
     const now = Date.now()

@@ -1,27 +1,27 @@
-import { createCache } from '../src/cache.js'
+import { createCache } from '../index.js'
 
 const safeCache = createCache({ allowReturnExpiredValue: false, expirationTime: 1000 })
 
 async function main() {
-  test('0')
+  createTestWithLabel('0')
 
   await Promise.all([
-    test('1'),
-    test('2'),
-    test('3'),
+    createTestWithLabel('1'),
+    createTestWithLabel('2'),
+    createTestWithLabel('3'),
   ])
 
   await timeout(1000)
-  await test('4')
+  await createTestWithLabel('4')
   await timeout(1000)
-  await test('5')
+  await createTestWithLabel('5')
   await timeout(1000)
-  await test('6')
+  await createTestWithLabel('6')
 }
 
-async function test(label) {
+async function createTestWithLabel(label) {
   console.time(`test ${label}`)
-  const result = await safeCache(() => timeout(250, label), { cacheKey: [23] })
+  const result = await safeCache(() => timeout(250, label), { cacheKey: [23, { floep: 'flap' }] })
   console.timeEnd(`test ${label}`)
   console.log(`done test ${label} - ${result}`)
 }

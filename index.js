@@ -1,1 +1,1 @@
-export * as cache from './src/cache'
+export * from './src/cache.js'

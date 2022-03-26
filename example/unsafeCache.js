@@ -1,25 +1,25 @@
-import { createCache } from '../src/cache.js'
+import { createCache } from '../index.js'
 
 const unsafeCache = createCache({ allowReturnExpiredValue: true, expirationTime: 1000 })
 
 async function main() {
-  test('0')
+  createATestWithLabel('0')
 
   await Promise.all([
-    test('1'),
-    test('2'),
-    test('3'),
+    createATestWithLabel('1'),
+    createATestWithLabel('2'),
+    createATestWithLabel('3'),
   ])
 
   await timeout(1000)
-  await test('4')
+  await createATestWithLabel('4')
   await timeout(1000)
-  await test('5')
+  await createATestWithLabel('5')
   await timeout(1000)
-  await test('6')
+  await createATestWithLabel('6')
 }
 
-async function test(label) {
+async function createATestWithLabel(label) {
   console.time(`test ${label}`)
   const result = await unsafeCache(() => timeout(250, label), { cacheKey: [23] })
   console.timeEnd(`test ${label}`)

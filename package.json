@@ -2,7 +2,6 @@
   "name": "@kaliber/cache",
   "version": "0.0.1",
   "main": "index.js",
-  "type": "module",
   "sideEffects": false,
   "publishConfig": {
     "access": "public"
