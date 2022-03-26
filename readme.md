@@ -11,8 +11,6 @@ yarn add @kaliber/cache
 ```
 
 ## Usage
-Short example. If your library has multiple ways to use it, show the most used one and refer to `/example` for further examples.
-
 ```jsx
 import fetch from 'node-fetch'
 import { createCache } from '@kaliber/cache'
