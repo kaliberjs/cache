@@ -10,7 +10,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
    */
   return function getCachedValue(getValue, { cacheKey }) {
     const now = Date.now()
-    const safeCacheKey = JSON.stringify(cacheKey)
+    const safeCacheKey = hashQueryKey(cacheKey)
     const cachedItem = cache[safeCacheKey]
 
     const isValid = cachedItem && cachedItem.validUntil >= now
@@ -21,4 +21,23 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
 
     return cachedItem && allowReturnExpiredValue ? cachedItem.value : newCacheItem.value
   }
+}
+
+/**
+ * @param {string | array} queryKey
+ * @returns string
+ */
+export function hashQueryKey(queryKey) {
+  const value = Array.isArray(queryKey) ? queryKey : [queryKey]
+
+  return JSON.stringify(value, (_, val) =>
+    val && typeof val === 'object' && !Array.isArray(val)
+      ? Object.keys(val)
+        .sort()
+        .reduce((result, key) => {
+          result[key] = val[key]
+          return result
+        }, {})
+      : val
+  )
 }
