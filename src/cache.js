@@ -8,7 +8,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
    * @template T
    * @type {import('./types').Cache<T>}
    */
-  return async function getCachedValue(getValue, { cacheKey }) {
+  return function getCachedValue(getValue, { cacheKey }) {
     const now = Date.now()
     const safeCacheKey = JSON.stringify(cacheKey)
     const cachedItem = cache[safeCacheKey]
@@ -16,30 +16,16 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
     const isValid = cachedItem && cachedItem.validUntil >= now
     if (isValid) return cachedItem.value
 
-    const callbackResult = getValue()
-    const callbackResultIsAnPromise = callbackResult instanceof Promise
+    const callbackValue = getValue()
 
-    const newCacheItem = { value: null, validUntil: now + expirationTime }
-    const returnCachedItem = cachedItem && allowReturnExpiredValue
+    const newCacheItem = { value: callbackValue, validUntil: now + expirationTime }
+    cache[safeCacheKey] = newCacheItem
 
-    if (callbackResultIsAnPromise) {
-      try {
-        newCacheItem.value = await callbackResult
+    if (callbackValue && 'catch' in callbackValue) callbackValue.catch(() => {
+      if (cache[safeCacheKey] !== newCacheItem) return
+      cache[safeCacheKey] = cachedItem
+    })
 
-        cache[safeCacheKey] = newCacheItem
-        return returnCachedItem ? cachedItem.value : newCacheItem.value
-      } catch (e) {
-        if (cachedItem) {
-          return cachedItem.value
-        } else {
-          return new Error('no cached item to return!')
-        }
-      }
-    } else {
-      newCacheItem.value = callbackResult
-
-      cache[safeCacheKey] = newCacheItem
-      return returnCachedItem ? cachedItem.value : newCacheItem.value
-    }
+    return (cachedItem && allowReturnExpiredValue) ? cachedItem.value : newCacheItem.value
   }
 }

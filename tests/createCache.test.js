@@ -1,7 +1,7 @@
 import { it, expect, describe, jest, beforeEach } from '@jest/globals'
 import { createCache } from '../index'
 
-describe('createCache', () => {
+describe('createCache with expiredValues disabled', () => {
   let cache = null
   const cacheKey = 'cacheKey'
   const expectedOutput = { expectedOutput: 'expectedOutput' }
@@ -26,8 +26,12 @@ describe('createCache', () => {
     expect(callback).toHaveBeenCalledTimes(1)
   })
 
+  it('allows for a empty callback function', () => {
+    cache(() => { }, { cacheKey })
+  })
+
   it('returns the callback results when a item is added to the cache', async () => {
-    const result = await cache(callback, { cacheKey })
+    const result = cache(callback, { cacheKey })
 
     expect(result).toEqual(expectedOutput)
     expect(callback).toHaveBeenCalledTimes(1)
@@ -41,8 +45,12 @@ describe('createCache', () => {
   })
 
   it('only caches a promise result if the promise is resolved', async () => {
-    const result1 = await cache(rejectedCallback, { cacheKey })
-    expect(result1).toBeInstanceOf(Error)
+    try {
+      await cache(rejectedCallback, { cacheKey })
+    } catch (e) {
+      // ignore error
+    }
+
     expect(rejectedCallback).toHaveBeenCalledTimes(1)
 
     const result2 = await cache(promiseCallback, { cacheKey })
@@ -50,94 +58,58 @@ describe('createCache', () => {
     expect(promiseCallback).toHaveBeenCalledTimes(1)
   })
 
-  it('returns a cached value if a promises fails and there was a valid item in cache, ignores the validation time', async () => {
-    const rejectedCallback = jest.fn(() => { return new Promise((_, reject) => reject('this promise is rejected')) })
-    const promiseCallback = jest.fn(() => new Promise((resolve) => resolve(expectedOutput)))
+  it('removes promise from cache when rejected', async () => {
+    const result1 = cache(rejectedCallback, { cacheKey })
+    const result2 = cache(promiseCallback, { cacheKey })
+    expect(result1).toEqual(result2)
 
-    await cache(promiseCallback, { cacheKey })
-    await timeout(75)
-
-    const result = await cache(rejectedCallback, { cacheKey })
-    expect(result).toBe(expectedOutput)
-    expect(rejectedCallback).toHaveBeenCalledTimes(1)
+    try { await result2 } catch (e) { }
+    const result3 = await cache(promiseCallback, { cacheKey })
+    expect(result3).toEqual(expectedOutput)
   })
 })
 
-describe('createCache in safeMode', () => {
+describe('createCache with expiredValues enabled', () => {
   let cache = null
   const cacheKey = 'cacheKey'
+  const expectedOutput = { expectedOutput: 'expectedOutput' }
 
-  beforeEach(() => {
-    cache = createCache({ allowReturnExpiredValue: false, expirationTime: 50 })
-  })
-
-  it('does not call the callback when a valid value is in cache', async () => {
-    const callback1 = jest.fn(() => ({ data: 'callback1' }))
-    const callback2 = jest.fn(() => ({ data: 'callback2' }))
-
-    await cache(callback1, { cacheKey })
-    await cache(callback2, { cacheKey })
-    await cache(callback2, { cacheKey })
-
-    expect(callback1).toHaveBeenCalledTimes(1)
-    expect(callback2).toHaveBeenCalledTimes(0)
-  })
-
-  it('returns a cached value when the expiration time is not reached', async () => {
-    const callback1 = () => ({ data: 'callback1' })
-    const callback2 = () => ({ data: 'callback2' })
-
-    await cache(callback1, { cacheKey })
-    await cache(callback2, { cacheKey })
-    const result = await cache(callback2, { cacheKey })
-    expect(result).toEqual({ data: 'callback1' })
-  })
-
-  it('returns the results of a given callback function when expiration time is reached', async () => {
-    const callback1 = jest.fn(() => ({ data: 'callback1' }))
-    const callback2 = jest.fn(() => ({ data: 'callback2' }))
-
-    await cache(callback1, { cacheKey })
-    await timeout(75)
-    const result = await cache(callback2, { cacheKey })
-
-    expect(callback1).toHaveBeenCalledTimes(1)
-    expect(callback2).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ data: 'callback2' })
-  })
-})
-
-describe('createCache in unsafeMode', () => {
-  let cache = null
-  const cacheKey = 'cacheKey'
+  let rejectedCallback = null
+  let promiseCallback = null
+  let dontCallCallback = null
 
   beforeEach(() => {
     cache = createCache({ allowReturnExpiredValue: true, expirationTime: 50 })
+    rejectedCallback = jest.fn(() => { return new Promise((_, reject) => reject('this promise is rejected')) })
+    promiseCallback = jest.fn(() => new Promise((resolve) => resolve(expectedOutput)))
+    dontCallCallback = jest.fn()
   })
 
-  it('does not call the callback when a valid value is in cache', async () => {
+  it('returns a previous value even if the expired time is reached', async () => {
     const callback1 = jest.fn(() => ({ data: 'callback1' }))
     const callback2 = jest.fn(() => ({ data: 'callback2' }))
 
     await cache(callback1, { cacheKey })
-    await cache(callback2, { cacheKey })
-    await cache(callback2, { cacheKey })
-
+    await timeout(75)
+    const result1 = await cache(callback2, { cacheKey })
     expect(callback1).toHaveBeenCalledTimes(1)
-    expect(callback2).toHaveBeenCalledTimes(0)
+    expect(result1).toEqual({ data: 'callback1' })
+
+    await timeout(75)
+    const result2 = await cache(() => { }, { cacheKey })
+    expect(result2).toEqual({ data: 'callback2' })
   })
 
-  it('returns a expired value when called after the cache expiry time but calls the callback function', async () => {
-    const callback1 = jest.fn(() => ({ data: 'callback1' }))
-    const callback2 = jest.fn(() => ({ data: 'callback2' }))
-
-    cache(callback1, { cacheKey })
+  it('returns previous value when the promise rejects', async () => {
+    cache(promiseCallback, { cacheKey })
     await timeout(75)
-    const result = await cache(callback2, { cacheKey })
-
-    expect(callback1).toHaveBeenCalledTimes(1)
-    expect(callback2).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ data: 'callback1' })
+    const result1 = cache(rejectedCallback, { cacheKey })
+    const result2 = cache(dontCallCallback, { cacheKey })
+    expect(dontCallCallback).toHaveBeenCalledTimes(0)
+    expect(await result1).toEqual(expectedOutput)
+    await expect(result2).rejects.toEqual("this promise is rejected")
+    const result3 = await cache(rejectedCallback, { cacheKey })
+    expect(result3).toEqual(expectedOutput)
   })
 })
 
