@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "main": "index.js",
   "sideEffects": false,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watchAll"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -20,5 +24,9 @@
   "private": false,
   "license": "MIT",
   "description": "Simple memory cache",
-  "repository": "https://github.com/kaliberjs/cache.git"
+  "repository": "https://github.com/kaliberjs/cache.git",
+  "devDependencies": {
+    "jest": "^27.5.1",
+    "jest-esm-transformer": "^1.0.0"
+  }
 }
