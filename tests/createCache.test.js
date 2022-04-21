@@ -26,8 +26,13 @@ describe('createCache with expiredValues disabled', () => {
     expect(callback).toHaveBeenCalledTimes(1)
   })
 
-  it('allows for a empty callback function', () => {
-    cache(() => { }, { cacheKey })
+  it('allows different values to be returned', () => {
+    expect(cache(() => { }, { cacheKey: 'empty' })).toBe(undefined)
+    expect(cache(() => { return false }, { cacheKey: 'false' })).toBe(false)
+    expect(cache(() => { return true }, { cacheKey: 'true' })).toBe(true)
+    expect(cache(() => { return null }, { cacheKey: 'null' })).toBe(null)
+    expect(cache(() => { return {} }, { cacheKey: 'object' })).toEqual({})
+    expect(cache(() => { return undefined }, { cacheKey: 'undefined' })).toEqual(undefined)
   })
 
   it('returns the callback results when a item is added to the cache', async () => {
