@@ -21,11 +21,16 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
     const newCacheItem = { value: callbackValue, validUntil: now + expirationTime }
     cache[safeCacheKey] = newCacheItem
 
-    if (callbackValue && 'catch' in callbackValue) callbackValue.catch(() => {
+    if (hasCatchProperty(callbackValue)) callbackValue.catch(() => {
       if (cache[safeCacheKey] !== newCacheItem) return
       cache[safeCacheKey] = cachedItem
     })
 
     return (cachedItem && allowReturnExpiredValue) ? cachedItem.value : newCacheItem.value
   }
+}
+
+/** @returns {x is { catch(f: (e: any) => void): any }} */
+function hasCatchProperty(x) {
+  return Boolean(x && x.catch)
 }
