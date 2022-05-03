@@ -16,10 +16,17 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
     const isValid = cachedItem && cachedItem.validUntil >= now
     if (isValid) return cachedItem.value
 
-    const newCacheItem = { value: getValue(), validUntil: now + expirationTime }
+    const callbackValue = getValue()
+
+    const newCacheItem = { value: callbackValue, validUntil: now + expirationTime }
     cache[safeCacheKey] = newCacheItem
 
-    return cachedItem && allowReturnExpiredValue ? cachedItem.value : newCacheItem.value
+    if (callbackValue && 'catch' in callbackValue) callbackValue.catch(() => {
+      if (cache[safeCacheKey] !== newCacheItem) return
+      cache[safeCacheKey] = cachedItem
+    })
+
+    return (cachedItem && allowReturnExpiredValue) ? cachedItem.value : newCacheItem.value
   }
 }
 
