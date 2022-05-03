@@ -21,7 +21,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
     const newCacheItem = { value: callbackValue, validUntil: now + expirationTime }
     cache[safeCacheKey] = newCacheItem
 
-    if (callbackValue && isObject(callbackValue) && 'catch' in callbackValue) callbackValue.catch(() => {
+    if (hasCatchProperty(callbackValue)) callbackValue.catch(() => {
       if (cache[safeCacheKey] !== newCacheItem) return
       cache[safeCacheKey] = cachedItem
     })
@@ -30,8 +30,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
   }
 }
 
-// Taken from https://github.com/lodash/lodash/blob/master/isObject.js
-function isObject(value) {
-  const type = typeof value
-  return value != null && (type === 'object' || type === 'function')
+/** @returns {x is { catch(f: (e: any) => void): any }} */
+function hasCatchProperty(x) {
+  return Boolean(x && x.catch)
 }
