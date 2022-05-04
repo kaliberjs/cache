@@ -8,7 +8,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
    * @template T
    * @type {import('./types').Cache<T>}
    */
-  return function getCachedValue(getValue, { cacheKey }) {
+  return function getCachedValue({ cacheKey, getValue }) {
     const now = Date.now()
     const safeCacheKey = JSON.stringify(cacheKey)
     const cachedItem = cache[safeCacheKey]

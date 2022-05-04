@@ -18,11 +18,12 @@ import { createCache } from '@kaliber/cache'
 const cache = createCache({ allowReturnExpiredValue: false, expirationTime: 1000 })
 
 function handleRequest(postId) {
-  const data = cache(async () => {
-    const response = await fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`)
-    return await response.json()
-  }, {
-    cacheKey: ['post', postId]
+  const data = cache({
+    cacheKey: ['post', postId],
+    async getValue() {
+      const response = await fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`)
+      return await response.json()
+    }
   })
 
   return data
