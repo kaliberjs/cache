@@ -1,6 +1,6 @@
 {
   "name": "@kaliber/cache",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "index.js",
   "sideEffects": false,
   "scripts": {
@@ -30,8 +30,8 @@
   "description": "Simple memory cache",
   "repository": "https://github.com/kaliberjs/cache.git",
   "devDependencies": {
+    "@kaliber/pack": "^0.0.2",
     "jest": "^27.5.1",
-    "jest-esm-transformer": "^1.0.0",
-    "@kaliber/pack": "^0.0.2"
+    "jest-esm-transformer": "^1.0.0"
   }
 }
