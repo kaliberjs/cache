@@ -5,7 +5,10 @@
   "sideEffects": false,
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watchAll"
+    "test:watch": "jest --watchAll",
+    "build": "kaliber-pack",
+    "watch": "kaliber-pack --watch",
+    "prepublishOnly": "kaliber-pack"
   },
   "publishConfig": {
     "access": "public"
@@ -17,6 +20,7 @@
   "files": [
     "index.js",
     "src/**",
+    "lib/**",
     "LICENSE",
     "readme.md",
     "package.json"
@@ -27,6 +31,7 @@
   "repository": "https://github.com/kaliberjs/cache.git",
   "devDependencies": {
     "jest": "^27.5.1",
-    "jest-esm-transformer": "^1.0.0"
+    "jest-esm-transformer": "^1.0.0",
+    "@kaliber/pack": "^0.0.2"
   }
 }
