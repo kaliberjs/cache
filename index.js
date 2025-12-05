@@ -1,4 +1,4 @@
-const cache = require('./lib/cache.js')
+const cache = require('./src/cache.js')
 
-Object.defineProperty(exports, "__esModule", { value: true })
+Object.defineProperty(exports, '__esModule', { value: true })
 exports.createCache = cache.createCache

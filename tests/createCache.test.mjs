@@ -1,21 +1,29 @@
-import { it, expect, describe, jest, beforeEach } from '@jest/globals'
-import { createCache } from '../index'
+import assert from 'node:assert'
+import { createCache } from '../index.js' // eslint-disable-line @kaliber/no-relative-parent-import
+import { beforeEach, describe, it } from 'node:test'
+/** @import { SuiteContext, TestContext, Mock } from 'node:test' */
 
 describe('createCache with expiredValues disabled', () => {
   /** @type {ReturnType<typeof createCache>} */
-  let cache = null
+  let cache
   const cacheKey = 'cacheKey'
   const expectedOutput = { expectedOutput: 'expectedOutput' }
 
-  let callback = null
-  let rejectedCallback = null
-  let promiseCallback = null
+  /** @type {Mock<() => any>} */
+  let callback
+  /** @type {Mock<() => any>} */
+  let rejectedCallback
+  /** @type {Mock<() => any>} */
+  let promiseCallback
 
-  beforeEach(() => {
+  beforeEach(t => {
+    if (!isTestContext(t))
+      throw new Error('Expected test context')
+
     cache = createCache({ allowReturnExpiredValue: false, expirationTime: 50 })
-    callback = jest.fn(() => expectedOutput)
-    rejectedCallback = jest.fn(() => { return new Promise((_, reject) => reject('this promise is rejected')) })
-    promiseCallback = jest.fn(() => new Promise((resolve) => resolve(expectedOutput)))
+    callback = t.mock.fn(() => expectedOutput)
+    rejectedCallback = t.mock.fn(() => { return new Promise((_, reject) => reject('this promise is rejected')) })
+    promiseCallback = t.mock.fn(() => new Promise((resolve) => resolve(expectedOutput)))
   })
 
   it('returns a function when called', () => {
@@ -31,7 +39,7 @@ describe('createCache with expiredValues disabled', () => {
     expect(cache({ cacheKey: 'empty', getValue: () => { } })).toBe(undefined)
     expect(cache({ cacheKey: 'false', getValue: () => { return false } })).toBe(false)
     expect(cache({ cacheKey: 'true', getValue: () => { return true } })).toBe(true)
-    expect(cache({ cacheKey: 'null', getValue: () => { return null }, })).toBe(null)
+    expect(cache({ cacheKey: 'null', getValue: () => { return null } })).toBe(null)
     expect(cache({ cacheKey: 'object', getValue: () => { return {} } })).toEqual({})
     expect(cache({ cacheKey: 'undefined', getValue: () => { return undefined } })).toEqual(undefined)
   })
@@ -77,24 +85,30 @@ describe('createCache with expiredValues disabled', () => {
 
 describe('createCache with expiredValues enabled', () => {
   /** @type {ReturnType<typeof createCache>} */
-  let cache = null
+  let cache
   const cacheKey = 'cacheKey'
   const expectedOutput = { expectedOutput: 'expectedOutput' }
 
-  let rejectedCallback = null
-  let promiseCallback = null
-  let dontCallCallback = null
+  /** @type {Mock<() => any>} */
+  let rejectedCallback
+  /** @type {Mock<() => any>} */
+  let promiseCallback
+  /** @type {Mock<() => any>} */
+  let dontCallCallback
 
-  beforeEach(() => {
+  beforeEach(t => {
+    if (!isTestContext(t))
+      throw new Error('Expected test context')
+
     cache = createCache({ allowReturnExpiredValue: true, expirationTime: 50 })
-    rejectedCallback = jest.fn(() => { return new Promise((_, reject) => reject('this promise is rejected')) })
-    promiseCallback = jest.fn(() => new Promise((resolve) => resolve(expectedOutput)))
-    dontCallCallback = jest.fn()
+    rejectedCallback = t.mock.fn(() => { return new Promise((_, reject) => reject(new Error('this promise is rejected'))) })
+    promiseCallback = t.mock.fn(() => new Promise((resolve) => resolve(expectedOutput)))
+    dontCallCallback = t.mock.fn()
   })
 
-  it('returns a previous value even if the expired time is reached', async () => {
-    const callback1 = jest.fn(() => ({ data: 'callback1' }))
-    const callback2 = jest.fn(() => ({ data: 'callback2' }))
+  it('returns a previous value even if the expired time is reached', async t => {
+    const callback1 = t.mock.fn(() => ({ data: 'callback1' }))
+    const callback2 = t.mock.fn(() => ({ data: 'callback2' }))
 
     await cache({ cacheKey, getValue: callback1 })
     await timeout(75)
@@ -114,14 +128,79 @@ describe('createCache with expiredValues enabled', () => {
     const result2 = cache({ cacheKey, getValue: dontCallCallback })
     expect(dontCallCallback).toHaveBeenCalledTimes(0)
     expect(await result1).toEqual(expectedOutput)
-    await expect(result2).rejects.toEqual("this promise is rejected")
+    await expect(result2).rejects.toEqual('this promise is rejected')
     const result3 = await cache({ cacheKey, getValue: rejectedCallback })
     expect(result3).toEqual(expectedOutput)
   })
 })
 
-async function timeout(milliseconds, label) {
+/** @arg {number} milliseconds @arg {string} [label] */
+async function timeout(milliseconds, label = undefined) {
   return new Promise((resolve) => {
     setTimeout(() => resolve(label), milliseconds)
   })
+}
+
+/** @template {SuiteContext | TestContext} T @arg {T} x @return {x is TestContext}  */
+function isTestContext(x) { return Boolean('mock' in x) }
+
+/**
+ * @arg {any} x
+ * @return {x is Mock<infer X>}
+ */
+function isMock(x) {
+  return Boolean(
+    x &&
+    x['mock'] &&
+    typeof x.mock.callCount === 'function'
+  )
+}
+
+/** @arg {*} actual */
+export function expect(actual) {
+
+  return {
+    /** @arg {*} expected */
+    toBe(expected) {
+      assert.strictEqual(actual, expected, `Expected ${actual} to be strictly equal to ${expected}`)
+    },
+
+    /** @arg {*} expected */
+    toEqual(expected) {
+      assert.deepStrictEqual(actual, expected, `Expected ${actual} to equal (deeply) ${expected}`)
+    },
+
+    /** @arg {*} constructor */
+    toBeInstanceOf(constructor) {
+      assert.ok(actual instanceof constructor,
+        `Expected ${actual} to be an instance of ${constructor.name}`)
+    },
+
+    /** @arg {number} count */
+    toHaveBeenCalledTimes(count) {
+      if (!isMock(actual))
+        assert.fail(`toHaveBeenCalledTimes() requires a node:test mock function. Received: ${actual}`)
+
+      const actualCount = actual.mock.callCount()
+      assert.strictEqual(actualCount, count, `Expected mock function to be called ${count} times, but was called ${actualCount} times.`)
+    },
+
+    rejects: {
+      /** @arg {*} expected */
+      async toEqual(expected) {
+        let rejectionReason = null
+        let rejected = false
+
+        try {
+          await actual
+        } catch (e) {
+          rejected = true
+          rejectionReason = e
+        }
+
+        assert.ok(rejected, 'Expected promise to reject, but it resolved.')
+        assert.strictEqual(rejectionReason.message, expected, `Expected rejection message "${expected}", but got "${rejectionReason.message}"`)
+      }
+    }
+  }
 }
