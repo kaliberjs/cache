@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { createCache } from '../index.js' // eslint-disable-line @kaliber/no-relative-parent-import
+import { createCache } from '../index.js'
 import { beforeEach, describe, it } from 'node:test'
 /** @import { SuiteContext, TestContext, Mock } from 'node:test' */
 

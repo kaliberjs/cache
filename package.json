@@ -3,6 +3,7 @@
   "version": "2.0.1",
   "main": "index.js",
   "sideEffects": false,
+  "type": "module",
   "scripts": {
     "test": "node --test"
   },
@@ -26,6 +27,7 @@
   "description": "Simple memory cache",
   "repository": "https://github.com/kaliberjs/cache.git",
   "devDependencies": {
-    "@kaliber/eslint-plugin": "^1.0.0"
+    "@kaliber/eslint-plugin": "^1.0.0",
+    "@types/node": "^22.0.0"
   }
 }
