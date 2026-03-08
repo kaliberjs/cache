@@ -7,7 +7,7 @@ Some times you want to cache a value but don't need a complex caching system. Th
 ## Installation
 
 ```
-yarn add @kaliber/cache
+pnpm add @kaliber/cache
 ```
 
 ## Usage
