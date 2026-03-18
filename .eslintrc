@@ -2,7 +2,8 @@
   "extends": "./node_modules/@kaliber/eslint-plugin/.eslintrc",
   "rules": {
     "@kaliber/no-relative-parent-import": "off",
-    "import/no-unresolved": "off"
+    "import/no-unresolved": "off",
+    "no-undef": "off"
   },
   "settings": {
       "@kaliber/eslint-plugin/lib/absolute-path-resolver-plugin": null
