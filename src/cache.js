@@ -91,7 +91,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
   }
 }
 
-/** @arg {*} x @returns {x is Promise<infer T>} */
+/** @arg {*} x @returns {x is Promise<any>} */
 function isPromiseLike(x) {
   return typeof x?.then === 'function'
 }
