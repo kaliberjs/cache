@@ -1,32 +1,16 @@
 {
-  "typeAcquisition": {
-    "enable": true
-  },
   "include": [
+    "./index.js",
     "./src/**/*",
-    "./node_modules/**.*",
-    "./types/**/*"
+    "./tests/**/*",
   ],
   "compilerOptions": {
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "lib": [
-      "dom",
-      "esnext"
-    ],
-    "jsx": "react",
-    "baseUrl": ".",
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
-    "paths": {
-      "/*?universal": [
-        "src/*"
-      ],
-      "/*": [
-        "src/*"
-      ]
-    }
+    "strict": true,
+    "useUnknownInCatchVariables": false,
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true
   }
 }

@@ -1,13 +1,11 @@
-/**
- * @param {import('./types').CacheParams} params
- */
+/** @import { CacheParams, Cache } from './types.ts' */
+
+/** @arg {CacheParams} params */
 export function createCache({ allowReturnExpiredValue, expirationTime }) {
+  /** @type {Record<string, any>} */
   const cache = {}
 
-  /**
-   * @template T
-   * @type {import('./types').Cache<T>}
-   */
+  /** @type {Cache} */
   return function getCachedValue({ cacheKey, getValue }) {
     const now = Date.now()
     const safeCacheKey = JSON.stringify(cacheKey)
@@ -30,7 +28,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime }) {
   }
 }
 
-/** @returns {x is { catch(f: (e: any) => void): any }} */
+/** @arg {*} x @returns {x is { catch(f: (e: any) => void): any }} */
 function hasCatchProperty(x) {
   return Boolean(x && x.catch)
 }
