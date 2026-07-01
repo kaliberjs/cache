@@ -1,17 +1,21 @@
 /** @import { CacheParams, Cache } from './types.ts' */
 
 const dayInMilliseconds = 24 * 60 * 60 * 1000
+const weekInMilliseconds = 7 * 24 * 60 * 60 * 1000
 const maxTimeoutValue = 0x7FFFFFFF // 32 bit signed integer
 
 /** @arg {CacheParams} params */
-export function createCache({ allowReturnExpiredValue, expirationTime }) {
+export function createCache({ allowReturnExpiredValue, expirationTime, overrideMaxAllowedCacheTime = false }) {
   /** @type {Record<string, any>} */
   const cache = {}
 
   if (expirationTime > maxTimeoutValue)
     throw new Error(`Expiration time too large, max value: ${maxTimeoutValue}`)
 
-  if (allowReturnExpiredValue && expirationTime >= dayInMilliseconds)
+  if (overrideMaxAllowedCacheTime && expirationTime > weekInMilliseconds)
+    throw new Error(`Expiration time too large, max value for override is 1 week`)
+
+  if (allowReturnExpiredValue && expirationTime > dayInMilliseconds)
     console.trace('It is not possible to return expired items when expiration time is larger than one day')
 
   /** @type {Cache} */

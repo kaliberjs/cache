@@ -381,6 +381,34 @@ describe('createCache memory management', () => {
   })
 })
 
+describe('createCache with expiration overrides', () => {
+  const weekInMilliseconds = 7 * 24 * 60 * 60 * 1000
+  const dayInMilliseconds = 24 * 60 * 60 * 1000
+
+  it('throws an error when override is enabled and expirationTime exceeds 1 week', () => {
+    const expectedError = new Error('Expiration time too large, max value for override is 1 week')
+
+    // The error is thrown synchronously upon initialization of the cache
+    expect(() => {
+      createCache({
+        allowReturnExpiredValue: false,
+        expirationTime: weekInMilliseconds + 1,
+        overrideMaxAllowedCacheTime: true
+      })
+    }).toThrow(expectedError)
+  })
+
+  it('allows the cache to be created when the overridden expirationTime is exactly 1 week', () => {
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+
+    expect(cache).toBeInstanceOf(Function)
+  })
+})
+
 /** @arg {number} milliseconds @arg {string} [label] */
 async function timeout(milliseconds, label = undefined) {
   return new Promise((resolve) => {
@@ -439,7 +467,13 @@ export function expect(actual) {
         actual()
       } catch (e) {
         didThrow = true
-        assert.strictEqual(e, expected)
+        // If an Error object was passed, compare the messages.
+        if (expected instanceof Error && e instanceof Error) {
+          assert.strictEqual(e.message, expected.message, `Expected error message "${expected.message}", but got "${e.message}"`)
+        } else {
+          // Fallback for strings or other types
+          assert.strictEqual(e, expected)
+        }
       }
       assert.ok(didThrow, 'Expected function to throw, it did not.')
     },
