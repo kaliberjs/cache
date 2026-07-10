@@ -384,11 +384,10 @@ describe('createCache memory management', () => {
 describe('createCache with expiration overrides', () => {
   const weekInMilliseconds = 7 * 24 * 60 * 60 * 1000
   const dayInMilliseconds = 24 * 60 * 60 * 1000
+  const maxTimeoutValue = 0x7FFFFFFF
 
   it('throws an error when override is enabled and expirationTime exceeds 1 week', () => {
     const expectedError = new Error('Expiration time too large, max value for override is 1 week')
-
-    // The error is thrown synchronously upon initialization of the cache
     expect(() => {
       createCache({
         allowReturnExpiredValue: false,
@@ -404,8 +403,68 @@ describe('createCache with expiration overrides', () => {
       expirationTime: weekInMilliseconds,
       overrideMaxAllowedCacheTime: true
     })
-
     expect(cache).toBeInstanceOf(Function)
+  })
+
+  it('caches for exactly 1 week and evicts properly when allowReturnExpiredValue is false', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick(weekInMilliseconds - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result1).toBe('original data')
+
+    // Fast forward past expiration
+    t.mock.timers.tick(2)
+    const result2 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result2).toBe('new data')
+  })
+  it('retains stale cache up to maxTimeoutValue when allowReturnExpiredValue is true and expirationTime is 1 week', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: true,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+    const cacheKey = 'staleEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before the hard expiration limit (maxTimeoutValue)
+    t.mock.timers.tick(maxTimeoutValue - 1)
+
+    // The item is stale but hasn't hard-expired yet, so it should safely return the stale data
+    // while executing the background fetch
+    const pendingPromise = new Promise(() => {})
+    const result = cache({ cacheKey, getValue: () => pendingPromise })
+    expect(result).toBe('original data')
+  })
+
+  it('hard-expires and purges the item if left untouched past maxTimeoutValue', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: true,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+    const cacheKey = 'purgeTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward strictly past the hard expiration limit
+    t.mock.timers.tick(maxTimeoutValue + 1)
+
+    // The item should be completely purged from memory, so a new call returns the fresh data
+    const result = cache({ cacheKey, getValue: () => 'fresh data' })
+    expect(result).toBe('fresh data')
   })
 })
 

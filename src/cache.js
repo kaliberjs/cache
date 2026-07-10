@@ -15,7 +15,7 @@ export function createCache({ allowReturnExpiredValue, expirationTime, overrideM
   if (overrideMaxAllowedCacheTime && expirationTime > weekInMilliseconds)
     throw new Error(`Expiration time too large, max value for override is 1 week`)
 
-  if (allowReturnExpiredValue && expirationTime > dayInMilliseconds)
+  if (allowReturnExpiredValue && !overrideMaxAllowedCacheTime && expirationTime > dayInMilliseconds)
     console.trace('It is not possible to return expired items when expiration time is larger than one day')
 
   /** @type {Cache} */
@@ -37,11 +37,10 @@ export function createCache({ allowReturnExpiredValue, expirationTime, overrideM
     if (cachedItem && cachedItem.timeoutId)
       clearTimeout(cachedItem.timeoutId)
 
-    const hardExpirationTime = (
-      allowReturnExpiredValue && expirationTime >= dayInMilliseconds ? expirationTime :
-      allowReturnExpiredValue ? Math.min(dayInMilliseconds, expirationTime * 10) :
-      expirationTime
-    )
+    // Apply the 10x stale multiplier but safely cap it at either `maxTimeoutValue` or `dayInMilliseconds`
+    const hardExpirationTime = allowReturnExpiredValue
+      ? Math.min(overrideMaxAllowedCacheTime ? maxTimeoutValue : dayInMilliseconds, expirationTime * 10)
+      : expirationTime
 
     const newCacheItem = {
       value: callbackValue,
