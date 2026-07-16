@@ -3,7 +3,7 @@ import { createCache } from '../index.js'
 import { beforeEach, describe, it } from 'node:test'
 /** @import { SuiteContext, TestContext, Mock } from 'node:test' */
 
-describe('createCache with expiredValues disabled', () => {
+describe('createCache - allowReturnExpiredValue: disabled', () => {
   /** @type {ReturnType<typeof createCache>} */
   let cache
   const cacheKey = 'cacheKey'
@@ -82,7 +82,7 @@ describe('createCache with expiredValues disabled', () => {
   })
 })
 
-describe('createCache with expiredValues enabled', () => {
+describe('createCache - allowReturnExpiredValue: enabled', () => {
   /** @type {ReturnType<typeof createCache>} */
   let cache
   const cacheKey = 'cacheKey'
@@ -133,7 +133,7 @@ describe('createCache with expiredValues enabled', () => {
   })
 })
 
-describe('createCache memory management', () => {
+describe('createCache - memory management', () => {
   it('releases expired items from memory', async () => {
     if (typeof global.gc !== 'function')
       throw new Error('This test requires the --expose-gc flag to run. (e.g., node --expose-gc test.js)')
@@ -381,6 +381,195 @@ describe('createCache memory management', () => {
   })
 })
 
+describe('createCache - overrideMaxAllowedCacheTime: enabled', () => {
+  const weekInMilliseconds = 7 * 24 * 60 * 60 * 1000
+
+  it('throws error when expirationTime exceeds 1 week - allowReturnExpiredValue: false', () => {
+    const expectedError = new Error('Expiration time too large, max value for override is 1 week')
+    expect(() => {
+      createCache({
+        allowReturnExpiredValue: false,
+        expirationTime: weekInMilliseconds + 1,
+        overrideMaxAllowedCacheTime: true
+      })
+    }).toThrow(expectedError)
+  })
+
+  it('throws error when expirationTime exceeds 1 week - allowReturnExpiredValue: true', () => {
+    const expectedError = new Error('Expiration time too large, max value for override is 1 week')
+    expect(() => {
+      createCache({
+        allowReturnExpiredValue: true,
+        expirationTime: weekInMilliseconds + 1,
+        overrideMaxAllowedCacheTime: true
+      })
+    }).toThrow(expectedError)
+  })
+
+  it('creates cache when expirationTime is exactly 1 week - allowReturnExpiredValue: false', () => {
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+    expect(cache).toBeInstanceOf(Function)
+  })
+
+  it('caches for exactly 1 week and evicts properly - allowReturnExpiredValue: false', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: weekInMilliseconds,
+      overrideMaxAllowedCacheTime: true
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick(weekInMilliseconds - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result1).toBe('original data')
+
+    // Fast forward past expiration
+    t.mock.timers.tick(2)
+    const result2 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result2).toBe('new data')
+  })
+})
+
+describe('createCache - overrideMaxAllowedCacheTime: disabled', () => {
+  const dayInMilliseconds = 24 * 60 * 60 * 1000
+
+  it('throws error when expirationTime exceeds 1 day - allowReturnExpiredValue: false', () => {
+    const expectedError = new Error('Expiration time too large, max value for override is 1 day')
+    expect(() => {
+      createCache({
+        allowReturnExpiredValue: false,
+        expirationTime: dayInMilliseconds + 1,
+        overrideMaxAllowedCacheTime: false
+      })
+    }).toThrow(expectedError)
+  })
+
+  it('throws error when expirationTime exceeds 1 day - allowReturnExpiredValue: true', () => {
+    const expectedError = new Error('Expiration time too large, max value for override is 1 day')
+    expect(() => {
+      createCache({
+        allowReturnExpiredValue: true,
+        expirationTime: dayInMilliseconds + 1,
+        overrideMaxAllowedCacheTime: false
+      })
+    }).toThrow(expectedError)
+  })
+
+  it('creates cache when expirationTime is exactly 1 day - allowReturnExpiredValue: false', () => {
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: dayInMilliseconds,
+      overrideMaxAllowedCacheTime: false
+    })
+    expect(cache).toBeInstanceOf(Function)
+  })
+
+  it('caches for exactly 1 day and evicts properly - allowReturnExpiredValue: false', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: dayInMilliseconds,
+      overrideMaxAllowedCacheTime: false
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick(dayInMilliseconds - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result1).toBe('original data')
+
+    // Fast forward past expiration
+    t.mock.timers.tick(2)
+    const result2 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result2).toBe('new data')
+  })
+
+  it('caches for half a day and experation tests 1 - allowReturnExpiredValue: false', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: false,
+      expirationTime: (dayInMilliseconds / 2),
+      overrideMaxAllowedCacheTime: false
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick((dayInMilliseconds / 2) - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result1).toBe('original data')
+
+    // Fast forward past expiration
+    t.mock.timers.tick(2)
+    const result2 = cache({ cacheKey, getValue: () => 'new data' })
+    expect(result2).toBe('new data')
+  })
+
+  it('caches for half a day and experation tests 2 - allowReturnExpiredValue: true', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: true,
+      expirationTime: (dayInMilliseconds / 2),
+      overrideMaxAllowedCacheTime: false
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick((dayInMilliseconds / 2) - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data 1' })
+    expect(result1).toBe('original data')
+
+    // Fast forward past expiration - expect stale data
+    t.mock.timers.tick(2)
+    const result2 = cache({ cacheKey, getValue: () => 'new data 2' })
+    expect(result2).toBe('original data')
+
+    // Call again - expect fresh data
+    const result3 = cache({ cacheKey, getValue: () => 'new data 3' })
+    expect(result3).toBe('new data 2')
+  })
+
+  it('caches for half a day and experation tests 3 - allowReturnExpiredValue: true', t => {
+    t.mock.timers.enable()
+    const cache = createCache({
+      allowReturnExpiredValue: true,
+      expirationTime: (dayInMilliseconds / 2),
+      overrideMaxAllowedCacheTime: false
+    })
+    const cacheKey = 'weekEvictionTest'
+
+    cache({ cacheKey, getValue: () => 'original data' })
+
+    // Fast forward to just before expiration
+    t.mock.timers.tick(dayInMilliseconds - 1)
+    const result1 = cache({ cacheKey, getValue: () => 'new data 1' })
+    expect(result1).toBe('original data')
+
+    // Call again, expect fresh data (we are after half a day on previous call)
+    const result2 = cache({ cacheKey, getValue: () => 'new data 2' })
+    expect(result2).toBe('new data 1')
+
+    // Fast forward past hard expiration
+    t.mock.timers.tick(dayInMilliseconds + 1)
+    // Call again - expect fresh data
+    const result4 = cache({ cacheKey, getValue: () => 'new data 3' })
+    expect(result4).toBe('new data 3')
+  })
+})
+
 /** @arg {number} milliseconds @arg {string} [label] */
 async function timeout(milliseconds, label = undefined) {
   return new Promise((resolve) => {
@@ -439,7 +628,13 @@ export function expect(actual) {
         actual()
       } catch (e) {
         didThrow = true
-        assert.strictEqual(e, expected)
+        // If an Error object was passed, compare the messages.
+        if (expected instanceof Error && e instanceof Error) {
+          assert.strictEqual(e.message, expected.message, `Expected error message "${expected.message}", but got "${e.message}"`)
+        } else {
+          // Fallback for strings or other types
+          assert.strictEqual(e, expected)
+        }
       }
       assert.ok(didThrow, 'Expected function to throw, it did not.')
     },
