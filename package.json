@@ -28,5 +28,11 @@
   "devDependencies": {
     "@kaliber/eslint-plugin": "^1.0.0",
     "@types/node": "^22.0.0"
+  },
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
